@@ -20,7 +20,10 @@ void addProduct(Product** inventory, int* count);
 void freeInv(Product** inventory, int*count);
 void displayInventory(Product* inventory, int count);
 void editProduct(Product* inventory, int count);
-void searchByPrice(Product* inventory, int count);
+void searchProduct(Product* inventory, int count);
+void insProduct(Product** inventory, int*count);
+void removeA(Product** inventory, int*count);
+void sort(Product* inventory, int count);
 
 int main() {
     SetConsoleCP(65001);
@@ -31,22 +34,29 @@ int main() {
 
     while (1) {
         printf("1. Добавить товар\n");
-        printf("2. Вывести весь список\n");
-        printf("3. Редактировать товар\n");
-        printf("4. Поиск по цене\n");
+        printf("2. Редактировать товар\n");
+        printf("3. Вставить товар по индексу\n");
+        printf("4. Поиск по критерию\n");
         printf("5. Удалить последний товар\n");
-        printf("6. Очистить весь списиок\n");
+        printf("6. Удалить товар по индексу\n");
+        printf("7. Сортировать список\n");
+        printf("8. Вывести весь список\n");
+        printf("9. Очистить весь список\n");
         printf("0. Выход\n");
         printf("Выберите действие: ");
         scanf(" %d", &choice);
 
         switch (choice) {
             case 1: addProduct(&inventory, &count); break;
-            case 2: displayInventory(inventory, count); break;
-            case 3: editProduct(inventory, count); break;
-            case 4: searchByPrice(inventory, count); break;
+            case 2: editProduct(inventory, count); break;
+            case 3: insProduct(&inventory, &count); break;
+            case 4: searchProduct(inventory, count); break;
             case 5: removeLast(&inventory, &count);break;
-            case 6: freeInv(&inventory, &count);break;
+            case 6: removeA(&inventory, &count); break;
+            case 7: sort(inventory, count); break;
+            case 8: displayInventory(inventory, count); break;
+            case 9: freeInv(&inventory, &count);break;
+
             case 0:
                freeInv(&inventory,&count);
                return 0;
@@ -54,6 +64,7 @@ int main() {
         }
     }
 }
+
 
 void rellocateInv(Product** sof, int current, int NewCount){
     if (NewCount==0){
@@ -74,6 +85,7 @@ void rellocateInv(Product** sof, int current, int NewCount){
     *sof=newArray;
 }
 
+
 void addProduct(Product** inventory, int*count) {
     rellocateInv(inventory, *count, *count+1);
     Product* p = &((*inventory)[*count]); 
@@ -92,6 +104,137 @@ void addProduct(Product** inventory, int*count) {
     (*count)++;
     printf("Товар добавлен, Память расширена\n");
 }
+
+void searchProduct(Product* inventory, int count){
+    if (count <= 0 || inventory == NULL) {
+        printf("Инвентарь пуст.\n");
+        return;
+    }
+    int type;
+    printf("Критерий поиска: 1 - По названию/поставщику, 2 - По цене (дешевле чем): ");
+    scanf("%d", &type);
+
+    char names[STR_LEN];
+    float maxPrice;
+    int found = 0;
+
+    if (type==1){
+        printf("Введите наззвание или потсавщика для поиска");
+        scanf("%[^\n]",names);
+    }
+    else if (type==2){
+        printf("Введите максимальную цену: ");
+        scanf("%[^\n]",&maxPrice);
+    }
+    else {
+        printf("Неверный выбор");
+        return;
+    }
+
+    printf("Результаты поиска:\n");
+    for(int i=0;i<count;i++){
+        int mat=0;
+
+        if (type==1){
+            if(strstr(inventory[i].name,names)||strstr(inventory[i].supplier,names)){
+                mat=1;
+            }
+        }
+        else{
+            if(inventory[i].price<=maxPrice){
+                mat=1;
+            }
+        }
+        if(mat){
+            printf("ID %d: %-15s | Название: %-15s | Цена: %-8.2f | Поставщик: %-15s\n", i,inventory[i].name,inventory[i].price,inventory[i].supplier);
+            found=1;
+        }
+    }
+    if (!found) printf("Совпадений не найдено\n");
+}
+
+void removeA(Product** inventory, int*count){
+   if (*count<=0){
+    printf("Список пуст\n");
+    return;
+   }
+   int idx;
+   printf("Введите индекс для удаления:",*count-1);
+   scanf("%d",&idx);
+
+   if(idx<0||idx>=*count){
+    printf("Ошибка!");
+    return;
+   }
+
+   for (int i=idx;i<*count-1;i++){
+    (*inventory)[i]=(*inventory)[i+1];
+   }
+   rellocateInv(inventory,*count,*count-1);
+   (*count)--;
+   printf("Товар удален.\n");
+}
+
+void insProduct(Product** inventory, int*count){
+    int idx;
+    printf("Введите позицию для вставки(0-%d)",*count);
+    scanf("%d",&idx);
+
+    if(idx<0||idx>*count){
+        printf("Неверный индекс!");
+        return;
+    }
+    rellocateInv(inventory,*count,*count+1);
+    for(int i=*count;i>idx;i--){
+        (*inventory)[i]=(*inventory)[i-1];
+    }
+    Product* p=&((*inventory)[idx]);
+    printf("Название: ");
+    scanf(" %[^\n]",p->name);
+    printf("Цена: ");
+    scanf(" %f",&p->price);
+    printf("Количество: ");
+    scanf(" %d",&p->quantity);
+    printf("Поставщик: ");
+    scanf(" %[^\n]",p->supplier);
+    printf("Срок годности: ");
+    scanf(" %[^\n]",p->expiry_date);
+
+    (*count)++;
+    printf("Товар добавлен на позицию %d",idx);
+}
+
+void sort(Product* inventory, int count){
+    if (count<2){
+        printf("Недостаточно элементов для сортировки");
+        return;
+    }
+    int choice;
+    printf("Сортировать по: 1-Названию, 2-Цене, 3-Сроку годности: ");
+    scanf("%d", &choice);
+
+    for (int i = 0; i < count - 1; i++) {
+        for (int j = 0; j < count - i - 1; j++) {
+            int swapNeeded = 0;
+            
+            if (choice == 1) {
+                if (strcmp(inventory[j].name, inventory[j + 1].name) > 0) swapNeeded = 1;
+            } else if (choice == 2) {
+                if (inventory[j].price > inventory[j + 1].price) swapNeeded = 1;
+            } else if (choice == 3) {
+                if (strcmp(inventory[j].expiry_date, inventory[j + 1].expiry_date) > 0) swapNeeded = 1;
+            }
+
+            if (swapNeeded) {
+                Product temp = inventory[j];
+                inventory[j] = inventory[j + 1];
+                inventory[j + 1] = temp;
+            }
+        }
+    }
+    printf("Сортировка завершена.\n");
+}
+
 
 void removeLast(Product** inventory, int*count){
     if(*count<=0){
@@ -165,24 +308,4 @@ void editProduct(Product* inventory, int count) {
             break;
     default: printf("Ошибка выбора поля.\n");
     }
-}
-
-
-void searchByPrice(Product* inventory, int count) {
-    if (count<=0){
-        printf("Список пуст\n");
-        return;
-    }
-    float max_p;
-    printf("Показать товары дешевле чем: ");
-    scanf("%f", &max_p);
-    
-    int found = 0;
-    for (int i = 0; i < count; i++) {
-        if (inventory[i].price <= max_p) {
-            printf("- %s (%.2f руб.)\n", inventory[i].name, inventory[i].price);
-            found = 1;
-        }
-    }
-    if (!found) printf("Товары не найдены.\n");
 }
